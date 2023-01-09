@@ -1,6 +1,6 @@
-# Providing Multiple Complications
+# CoffeeTrak
 
-Present multiple complications for a single complication family using descriptors.
+A iOS Watch App for Tracking Caffeine Consumption with multiple complications for a single complication family using descriptors.
 
 ## Overview
 
@@ -160,4 +160,4 @@ private func createCaffeineModularSmallTemplate(forDate date: Date) -> CLKCompli
                                                         line2TextProvider: mgUnitProvider)
 }
 ```
-# CoffeeTrak
+
