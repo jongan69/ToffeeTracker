@@ -20,12 +20,6 @@ class CoffeeData: ObservableObject {
         case dataTypeNotAvailable
     }
     
-    // A function for requesting authorization to HealthKit Parameters:
-    // .heartRate
-    // .activeEnergyBurned
-    // .dietaryCaffeine
-    // .activitySummaryType()
-    
     
     let logger = Logger(subsystem: "com.example.apple-samplecode.Coffee-Tracker.watchkitapp.watchkitextension.CoffeeData", category: "Model")
     let healthStore = HKHealthStore()
@@ -81,9 +75,6 @@ class CoffeeData: ObservableObject {
     public var currentMGCaffeine: Double {
         mgCaffeine(atDate: Date())
     }
-    
-    
-    
     
     // The currentMGCaffeineString contains a user-readable string that represents the
     // current amount of caffeine in the user's body.
@@ -277,7 +268,7 @@ class CoffeeData: ObservableObject {
                 print("deleted: \(deletedDietaryCaffeineSample)")
             }
             
-            print("Caffeine Query updateHandler")
+            print("Get Caffeine Query updateHandler")
             print(data);
             print(samples);
         }
@@ -487,13 +478,15 @@ class CoffeeData: ObservableObject {
         logger.debug("Loading the model.")
         
         // The quantity type to write to the health store.
-        let writeDataTypes : Set = [HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryCaffeine)!]
+        let writeDataTypes : Set = [HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryCaffeine)!, HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryWater)!]
         
         // The quantity types to read from the health store.
         let readDataTypes : Set = [HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.stepCount)!,
+                                                   HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryCaffeine)!,
                                                    HKObjectType.characteristicType(forIdentifier: HKCharacteristicTypeIdentifier.biologicalSex)!,
                                                    HKObjectType.characteristicType(forIdentifier: HKCharacteristicTypeIdentifier.dateOfBirth)!,
                                                    HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.bodyMass)!,
+                                                   HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryWater)!,
                                                    HKObjectType.activitySummaryType()]
         
         // Request authorization for those quantity types.

@@ -22,10 +22,23 @@
 	<string>1</string>
 	<key>CLKComplicationPrincipalClass</key>
 	<string>$(PRODUCT_MODULE_NAME).ComplicationController</string>
+	
+	<key>NSExtension</key>
+	<dict>
+		<key>NSExtensionAttributes</key>
+		<dict>
+			<key>WKAppBundleIdentifier</key>
+			<string>eth.jongan69</string>
+		</dict>
+		<key>NSExtensionPointIdentifier</key>
+		<string>com.apple.watchkit</string>
+	</dict>
+
 	<key>NSHealthShareUsageDescription</key>
 	<string>"Coffee Tracker saves caffeine information about drinks consumed to HealthKit."</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>"Coffee Tracker uses samples from other apps to update the current caffeine levels"</string>
+	
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

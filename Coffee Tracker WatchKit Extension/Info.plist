@@ -32,6 +32,7 @@
 		<key>NSExtensionPointIdentifier</key>
 		<string>com.apple.watchkit</string>
 	</dict>
+	
 	<key>NSHealthShareUsageDescription</key>
 	<string>&quot;Coffee Tracker saves caffeine information about drinks consumed to HealthKit.&quot;</string>
 	<key>NSHealthUpdateUsageDescription</key>
