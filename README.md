@@ -1,6 +1,6 @@
 # CoffeeTrak
 
-A iOS Watch App for Tracking Caffeine Consumption with multiple complications for a single complication family using descriptors.
+A iOS Watch App for Tracking Caffeine Consumption with multiple complications for a single complication family using descriptors and HealthKit Integration
 
 ## Overview
 
