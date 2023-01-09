@@ -21,6 +21,7 @@ enum DrinkType: Int, CaseIterable, Identifiable {
     case softDrink
     case energyDrink
     case chocolate
+    case waterCup
     
     // the id property contains a unique ID for each type of drink.
     var id: Int {
@@ -52,6 +53,8 @@ enum DrinkType: Int, CaseIterable, Identifiable {
             return "Energy Drink"
         case .chocolate:
             return "Chocolate"
+        case .waterCup:
+            return "8oz of Water"
         }
     }
     
@@ -80,6 +83,38 @@ enum DrinkType: Int, CaseIterable, Identifiable {
             return 29.0
         case .chocolate:
             return 18.0
+        case .waterCup:
+            return 0.0
+        }
+    }
+    
+    // The mgCaffeinePerServing property contains the amount of caffeine in the drink.
+    var avgOuncesPerServing: Double {
+        switch self {
+        case .smallCoffee:
+            return 5.0
+        case .mediumCoffee:
+            return 8.0
+        case .largeCoffee:
+            return 12.0
+        case .singleEspresso:
+            return 3.0
+        case .doubleEspresso:
+            return 6.0
+        case .quadEspresso:
+            return 8.0
+        case .blackTea:
+            return 8.0
+        case .greenTea:
+            return 8.0
+        case .softDrink:
+            return 8.0
+        case .energyDrink:
+            return 8.0
+        case .chocolate:
+            return 8.0
+        case .waterCup:
+            return 8.0
         }
     }
 }
