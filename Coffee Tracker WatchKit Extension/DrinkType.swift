@@ -8,6 +8,8 @@ The valid drink types.
 import Foundation
 
 // Define the types of drinks supported by Coffee Tracker.
+
+// For Extended Drink Functioanlity use Negaitive Caffeine Numbers
 enum DrinkType: Int, CaseIterable, Identifiable {
     
     case smallCoffee
@@ -22,6 +24,7 @@ enum DrinkType: Int, CaseIterable, Identifiable {
     case energyDrink
     case chocolate
     case waterCup
+    case shotOfLiquor
     
     // the id property contains a unique ID for each type of drink.
     var id: Int {
@@ -55,6 +58,8 @@ enum DrinkType: Int, CaseIterable, Identifiable {
             return "Chocolate"
         case .waterCup:
             return "8oz of Water"
+        case .shotOfLiquor:
+            return "Shot of Liquor"
         }
     }
     
@@ -85,11 +90,13 @@ enum DrinkType: Int, CaseIterable, Identifiable {
             return 18.0
         case .waterCup:
             return 0.0
+        case .shotOfLiquor:
+            return -1.0
         }
     }
     
-    // The mgCaffeinePerServing property contains the amount of caffeine in the drink.
-    var avgOuncesPerServing: Double {
+    // The avgOuncesPerServing property contains the average amount of oz of fluid per drink.
+    var ozPerServing: Double {
         switch self {
         case .smallCoffee:
             return 5.0
@@ -115,6 +122,8 @@ enum DrinkType: Int, CaseIterable, Identifiable {
             return 8.0
         case .waterCup:
             return 8.0
+        case .shotOfLiquor:
+            return 1.0
         }
     }
 }

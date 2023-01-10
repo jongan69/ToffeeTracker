@@ -18,24 +18,33 @@ struct CoffeeTrackerView: View {
     var body: some View {
         VStack {
             
-            // Display the current amount of caffeine in the user's body.
-            Text(coffeeData.currentMGCaffeineString + " mg")
+            // Display the current number of drinks recorded
+            Text("\(coffeeData.currentDrinks.count) Drinks")
                 .font(.body)
                 .fontWeight(.bold)
                 .foregroundColor(colorForCaffeineDose())
-            Text("Current Caffeine Dose")
+            Text("Drinks Today")
+                .font(.footnote)
+            Divider()
+            
+            // Display the current amount of caffeine in the user's body.
+            Text(coffeeData.currentOuncesString + " oz")
+                .font(.body)
+                .fontWeight(.bold)
+                .foregroundColor(colorForCaffeineDose())
+            Text("Liquid Consumed")
                 .font(.footnote)
             Divider()
             
             // Display how much the user has drunk today, using the equivalent
             // number of 8-ounce. cups of coffee.
-            Text(coffeeData.totalCupsTodayString + " cups")
-                .font(.body)
-                .fontWeight(.bold)
-                .foregroundColor(colorForDailyDrinkCount())
-            Text("Equivalent Drinks Today")
-                .font(.footnote)
-            Spacer()
+//            Text(coffeeData.totalCupsTodayString + " cups")
+//                .font(.body)
+//                .fontWeight(.bold)
+//                .foregroundColor(colorForDailyDrinkCount())
+//            Text("Equivalent Drinks Today")
+//                .font(.footnote)
+//            Spacer()
             
             // Display a button that lets the user record new drinks.
             Button(action: { self.showDrinkList.toggle() }) {

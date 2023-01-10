@@ -19,9 +19,13 @@ struct Drink: Hashable, Codable {
     // The uuid property contains a globally unique identifier for the drink.
     let uuid: UUID
     
+    // The uuid property contains a globally unique identifier for the drink.
+    let oz: Double
+    
     // The initializer creates a new drink object.
-    init(mgCaffeine: Double, onDate date: Date, uuid: UUID = UUID()) {
+    init(mgCaffeine: Double, oz: Double ,onDate date: Date, uuid: UUID = UUID()) {
         self.mgCaffeine = mgCaffeine
+        self.oz = oz
         self.date = date
         self.uuid = uuid
     }

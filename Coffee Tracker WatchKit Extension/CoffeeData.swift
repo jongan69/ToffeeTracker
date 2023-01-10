@@ -98,12 +98,39 @@ class CoffeeData: ObservableObject {
         var total = 0.0
         
         for drink in currentDrinks {
+            
             total += drink.caffeineRemaining(at: date)
+        }
+        return total
+    }
+    
+    
+    
+    public var currentOz: Double {
+        ozConsumedToday(atDate: Date())
+    }
+    
+    public func ozConsumedToday(atDate date: Date) -> Double {
+        var total = 0.0
+        
+        for drink in currentDrinks {
+            if let diff = Calendar.current.dateComponents([.hour], from: drink.date, to: date).hour, diff < 24 {
+                total += drink.oz
+            } else {
+                print("Drink is over 24 hrs Old")
+            }
         }
         
         return total
     }
     
+    public var currentOuncesString: String {
+        guard let result = numberFormatter.string(from: NSNumber(value: currentOz)) else {
+            fatalError("*** Unable to create a string for \(currentOz) ***")
+        }
+        
+        return result
+    }
     
     
     
@@ -172,17 +199,28 @@ class CoffeeData: ObservableObject {
         }
     }
     
+    public func color(forTotalLiquids cups: Double) -> UIColor {
+        if cups < 20.0 {
+            return .red
+        } else if cups < 50.0 {
+            return .yellow
+        } else {
+            return .green
+        }
+    }
+    
     
     
     // Add a drink to the list of drinks.
-    public func addDrink(mgCaffeine: Double, onDate date: Date) {
+    public func addDrink(mgCaffeine: Double, onDate date: Date, oz: Double) {
         logger.debug("Adding a drink.")
         
         // Create a local array to hold the changes.
         var drinks = currentDrinks
         
         // Create a new drink and add it to the array.
-        let drink = Drink(mgCaffeine: mgCaffeine, onDate: date)
+        let drink = Drink(mgCaffeine: mgCaffeine, oz: oz, onDate: date)
+        
         drinks.append(drink)
         
         // Filter the array to get rid of any drinks that are 24 hours old.
@@ -376,35 +414,114 @@ class CoffeeData: ObservableObject {
     }
     
     
-    
-    
-    // Begin saving the drink data to disk.
-    private func save() {
-        // Check for Healthkit Auth
-        guard HKHealthStore.isHealthDataAvailable() else {
-            // Request Authorization if not availible
-            print("Requesting Health Kit Access")
-            // The quantity type to write to the health store.
-            let writeDataTypes : Set = [HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryCaffeine)!]
+    func saveAlcoholInHealthKit (){
+        print("Saving Water To HealthKit")
+        // The quantity type to write to the health store.
+        if #available(watchOS 8.0, *) {
+            let writeDataTypes : Set = [HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.numberOfAlcoholicBeverages)!]
             // The quantity types to read from the health store.
-            let readDataTypes : Set = [HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.stepCount)!,
-                                                   HKObjectType.characteristicType(forIdentifier: HKCharacteristicTypeIdentifier.biologicalSex)!,
-                                                   HKObjectType.characteristicType(forIdentifier: HKCharacteristicTypeIdentifier.dateOfBirth)!,
-                                                   HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.bodyMass)!,
-                                                   HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryWater)!,
-                                                   HKObjectType.activitySummaryType()]
+            let readDataTypes : Set = [HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.numberOfAlcoholicBeverages)!,HKObjectType.activitySummaryType()]
             // Request authorization for those quantity types.
             self.healthStore.requestAuthorization(toShare: writeDataTypes, read: readDataTypes) { (success, error) in
                 if !success {
                     // Handle the error here.
-                    print("Couldn't read")
+                    print("Couldn't save")
                 } else {
                     // Once Authorized, query dietaryCaffeine
-                    print("Access to Caffine Data Granted")
-                    self.getCaffeineFromHealthKit()
+                    print("Saving Caffine Data")
                 }
             }
-            return
+            if HKHealthStore.isHealthDataAvailable() {
+                    if let type = HKSampleType.quantityType(forIdentifier: HKQuantityTypeIdentifier.numberOfAlcoholicBeverages) {
+                        let date = Date()
+                        let lastDrink = currentDrinks.last!
+                        
+                        print("Save Alcohol Datat")
+                        print("Last Drink was \(lastDrink)")
+                        print("Saving 1 drink to HealthKit")
+                        
+                        let quantity = HKQuantity(unit: HKUnit.count(), doubleValue: 1.0)
+                        let sample = HKQuantitySample(type: type, quantity: quantity, start: date, end: date)
+                        self.healthStore.save(sample, withCompletion: { (success, error) in
+                            print("Saved \(success), error \(String(describing: error))")
+                            if(!success){
+                                print("Error Saving to Health Kit")
+                            }
+                        })
+                    }
+            }
+        } else {
+            // Fallback on earlier versions
+            print("Error Need iOS 8 Health Kit")
+
+        }
+    }
+    
+    
+    
+    
+    // Begin saving the drink data to disk.
+    private func save() {
+        
+        
+        // Check for Healthkit Auth
+        guard HKHealthStore.isHealthDataAvailable() else {
+            if #available(watchOS 8.0, *) {
+                // Request Authorization if not availible
+                print("Requesting Health Kit Access W/ Alc")
+                // The quantity type to write to the health store.
+                let writeDataTypes : Set = [
+                    HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryCaffeine)!,
+                    HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryWater)!,
+                    HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.numberOfAlcoholicBeverages)!]
+                // The quantity types to read from the health store.
+                let readDataTypes : Set = [HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.stepCount)!,
+                                           HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.numberOfAlcoholicBeverages)!,
+                                           HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryCaffeine)!,
+                                           HKObjectType.characteristicType(forIdentifier: HKCharacteristicTypeIdentifier.biologicalSex)!,
+                                           HKObjectType.characteristicType(forIdentifier: HKCharacteristicTypeIdentifier.dateOfBirth)!,
+                                           HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.bodyMass)!,
+                                           HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryWater)!,
+                                           HKObjectType.activitySummaryType()]
+                // Request authorization for those quantity types.
+                self.healthStore.requestAuthorization(toShare: writeDataTypes, read: readDataTypes) { (success, error) in
+                    if !success {
+                        // Handle the error here.
+                        print("Couldn't read")
+                    } else {
+                        // Once Authorized, query dietaryCaffeine
+                        print("Access to Data Granted")
+                        self.getCaffeineFromHealthKit()
+                    }
+                }
+                return
+            } else {
+                // Fallback on earlier versions
+                // Request Authorization if not availible
+                print("Requesting Health Kit Access for Older iOS")
+                // The quantity type to write to the health store.
+                let writeDataTypes : Set = [HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryCaffeine)!, HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryWater)!]
+                // The quantity types to read from the health store.
+                let readDataTypes : Set = [HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.stepCount)!,
+                                           HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryCaffeine)!,
+                                           HKObjectType.characteristicType(forIdentifier: HKCharacteristicTypeIdentifier.biologicalSex)!,
+                                           HKObjectType.characteristicType(forIdentifier: HKCharacteristicTypeIdentifier.dateOfBirth)!,
+                                           HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.bodyMass)!,
+                                           HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryWater)!,
+                                           HKObjectType.activitySummaryType()]
+                // Request authorization for those quantity types.
+                self.healthStore.requestAuthorization(toShare: writeDataTypes, read: readDataTypes) { (success, error) in
+                    if !success {
+                        // Handle the error here.
+                        print("Couldn't read")
+                    } else {
+                        // Once Authorized, query dietaryCaffeine
+                        print("Access to Data Granted")
+                        self.getCaffeineFromHealthKit()
+                    }
+                }
+                return
+            }
         }
         
         // Check if drinks are outdated
@@ -412,61 +529,77 @@ class CoffeeData: ObservableObject {
             logger.debug("The drink list hasn't changed. No need to save.")
             return
         } else {
-            
-            // Check if Water by 0 Caffeine
+            // Check Drink type by Caffeine amount
             let latest = Double(currentDrinks.last!.mgCaffeine)
-            if(latest == 0){
-                // Saving Water
+            
+            switch latest {
+            case -1:
+                print("Save Alcohol to HealthKit")
+                saveAlcoholInHealthKit ()
+                // Update the saved value.
+                self.savedValue = currentDrinks
+            case 0:
                 print("Save Water to HealthKit")
                 saveWaterInHealthKit()
-            } else {
+                // Update the saved value.
+                self.savedValue = currentDrinks
+            default:
                 // Saving Caffeine
                 print("Save Caffeine to HealthKit")
                 saveCaffeineInHealthKit()
-            }
-        }
-        
-        
-        // Save as a binary plist file.
-        let encoder = PropertyListEncoder()
-        encoder.outputFormat = .binary
-        
-        let data: Data
-        
-        do {
-            // Encode the currentDrinks array.
-            data = try encoder.encode(currentDrinks)
-        } catch {
-            logger.error("An error occurred while encoding the data: \(error.localizedDescription)")
-            return
-        }
-        
-        // Save the data to disk as a binary plist file.
-        let saveAction = { [unowned self] in
-            do {
+                // Save as a binary plist file.
+                let encoder = PropertyListEncoder()
+                encoder.outputFormat = .binary
+                let data: Data
+                do {
+                    // Encode the currentDrinks array.
+                    data = try encoder.encode(currentDrinks)
+                } catch {
+                    logger.error("An error occurred while encoding the data: \(error.localizedDescription)")
+                    return
+                }
+                // Save the data to disk as a binary plist file.
+                let saveAction = { [unowned self] in
+                    do {
+                        // Write the data to disk.
+                        try data.write(to: self.getDataURL(), options: [.atomic])
+                        // Update the saved value.
+                        self.savedValue = currentDrinks
+                        self.logger.debug("Saved!")
+                    } catch {
+                        self.logger.error("An error occurred while saving the data: \(error.localizedDescription)")
+                    }
+                }
                 
-                // Write the data to disk.
-                try data.write(to: self.getDataURL(), options: [.atomic])
-                
-                // Update the saved value.
-                self.savedValue = currentDrinks
-                
-                self.logger.debug("Saved!")
-            } catch {
-                self.logger.error("An error occurred while saving the data: \(error.localizedDescription)")
+                // If the app is running in the background, save synchronously.
+                if WKApplication.shared().applicationState == .background {
+                    logger.debug("Synchronously saving the model on \(Thread.current).")
+                    saveAction()
+                } else {
+                    // Otherwise save the data on a background queue.
+                    background.async { [unowned self] in
+                        logger.debug("Asynchronously saving the model on a background thread.")
+                        saveAction()
+                    }
+                }
             }
-        }
-        
-        // If the app is running in the background, save synchronously.
-        if WKApplication.shared().applicationState == .background {
-            logger.debug("Synchronously saving the model on \(Thread.current).")
-            saveAction()
-        } else {
-            // Otherwise save the data on a background queue.
-            background.async { [unowned self] in
-                logger.debug("Asynchronously saving the model on a background thread.")
-                saveAction()
-            }
+            
+            // Check if Alcohol by -1
+//            if(latest == -1.0){
+//                // Saving Water
+//                print("Save Water to HealthKit")
+//                saveWaterInHealthKit()
+//            } else if(latest == 0){
+//                // Saving Water
+//                print("Save Water to HealthKit")
+//                saveWaterInHealthKit()
+//            } else {
+//                // Saving Caffeine
+//                print("Save Caffeine to HealthKit")
+//                saveCaffeineInHealthKit()
+//            }
+            
+            
         }
     }
     
@@ -478,28 +611,57 @@ class CoffeeData: ObservableObject {
         logger.debug("Loading the model.")
         
         // The quantity type to write to the health store.
-        let writeDataTypes : Set = [HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryCaffeine)!, HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryWater)!]
-        
-        // The quantity types to read from the health store.
-        let readDataTypes : Set = [HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.stepCount)!,
-                                                   HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryCaffeine)!,
-                                                   HKObjectType.characteristicType(forIdentifier: HKCharacteristicTypeIdentifier.biologicalSex)!,
-                                                   HKObjectType.characteristicType(forIdentifier: HKCharacteristicTypeIdentifier.dateOfBirth)!,
-                                                   HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.bodyMass)!,
-                                                   HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryWater)!,
-                                                   HKObjectType.activitySummaryType()]
-        
-        // Request authorization for those quantity types.
-        self.healthStore.requestAuthorization(toShare: writeDataTypes, read: readDataTypes) { (success, error) in
-                if !success {
-                    // Handle the error here.
-                    print("Couldn't read")
-                } else {
-                    // Once Authorized, query dietaryCaffeine
-                    print("Access Caffine Data Granted")
-                    self.getCaffeineFromHealthKit()
-                }
+            if #available(watchOS 8.0, *) {
+                let writeDataTypes : Set = [HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryCaffeine)!,
+                                            HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryWater)!,
+                                            HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.numberOfAlcoholicBeverages)!]
+                
+                // The quantity types to read from the health store.
+                let readDataTypes : Set = [HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.stepCount)!,
+                                                           HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryCaffeine)!,
+                                                           HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.numberOfAlcoholicBeverages)!,
+                                                           HKObjectType.characteristicType(forIdentifier: HKCharacteristicTypeIdentifier.biologicalSex)!,
+                                                           HKObjectType.characteristicType(forIdentifier: HKCharacteristicTypeIdentifier.dateOfBirth)!,
+                                                           HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.bodyMass)!,
+                                                           HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryWater)!,
+                                                           HKObjectType.activitySummaryType()]
+                
+                // Request authorization for those quantity types.
+                self.healthStore.requestAuthorization(toShare: writeDataTypes, read: readDataTypes) { (success, error) in
+                        if !success {
+                            // Handle the error here.
+                            print("Couldn't read")
+                        } else {
+                            // Once Authorized, query dietaryCaffeine
+                            print("Access to Data Granted")
+                            self.getCaffeineFromHealthKit()
+                        }
+                    }
+            } else {
+                // Fallback on earlier versions
+                // The quantity type to write to the health store.
+                let writeDataTypes : Set = [HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryCaffeine)!, HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryWater)!]
+                // The quantity types to read from the health store.
+                let readDataTypes : Set = [HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.stepCount)!,
+                                                           HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryCaffeine)!,
+                                                           HKObjectType.characteristicType(forIdentifier: HKCharacteristicTypeIdentifier.biologicalSex)!,
+                                                           HKObjectType.characteristicType(forIdentifier: HKCharacteristicTypeIdentifier.dateOfBirth)!,
+                                                           HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.bodyMass)!,
+                                                           HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryWater)!,
+                                                           HKObjectType.activitySummaryType()]
+                // Request authorization for those quantity types.
+                self.healthStore.requestAuthorization(toShare: writeDataTypes, read: readDataTypes) { (success, error) in
+                        if !success {
+                            // Handle the error here.
+                            print("Couldn't read")
+                        } else {
+                            // Once Authorized, query dietaryCaffeine
+                            print("Access to Data Granted")
+                            self.getCaffeineFromHealthKit()
+                        }
+                    }
             }
+        
             
         // Check if Authorization Success on Load
         guard HKHealthStore.isHealthDataAvailable() else {

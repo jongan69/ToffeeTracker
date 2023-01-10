@@ -29,7 +29,7 @@ struct DrinkListView: View {
     func addDrink(type: DrinkType) {
         // Add a drink to the model.
         coffeeData.addDrink(mgCaffeine: type.mgCaffeinePerServing,
-                            onDate: Date())
+                            onDate: Date(), oz: type.ozPerServing)
         
         // Dismiss the view.
         presentationMode.wrappedValue.dismiss()

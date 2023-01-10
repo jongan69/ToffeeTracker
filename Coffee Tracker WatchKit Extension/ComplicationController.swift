@@ -18,6 +18,8 @@ class ComplicationController: NSObject, CLKComplicationDataSource {
         static let caffeine = Complication(identifier: "Coffee_Tracker_Caffeine_Dose", displayName: "Caffeine Dose")
         static let cups = Complication(identifier: "Coffee_Tracker_Number_Of_Cups", displayName: "Total Cups")
         static let both = Complication(identifier: "Coffee_Tracker_Both", displayName: "Both Caffeine and Cups")
+        static let ounces = Complication(identifier: "Ounces", displayName: "Ounces")
+
     }
     
     // The data property contains a reference to the app's shared data model.
@@ -70,13 +72,22 @@ class ComplicationController: NSObject, CLKComplicationDataSource {
                                 .graphicRectangular,
                                 .graphicExtraLarge])
         
+        let ounces = CLKComplicationDescriptor(
+            identifier: Complication.ounces.identifier,
+            displayName: Complication.ounces.displayName,
+            supportedFamilies: [.modularSmall,
+                                .utilitarianSmall,
+                                .utilitarianSmallFlat,
+                                .graphicCorner,
+                                .graphicCircular,])
+        
         // Create the descriptor for complications that show both the current caffeine
         // dose and the total number of cups drank.
         let both = CLKComplicationDescriptor(identifier: Complication.both.identifier,
                                              displayName: Complication.both.displayName,
                                              supportedFamilies: [.modularLarge, .graphicBezel])
         
-        handler([both, caffeine, cups])
+        handler([both, caffeine, cups, ounces])
     }
     
     // MARK: - Timeline Population
@@ -149,20 +160,22 @@ class ComplicationController: NSObject, CLKComplicationDataSource {
         
         switch (complication.family, complication.identifier) {
         
+        case (.modularSmall, Complication.ounces.identifier):
+            return createOuncesModularSmallTemplate(forDate: date)
         case (.modularSmall, Complication.cups.identifier):
             return createCupsModularSmallTemplate(forDate: date)
         case (.modularSmall, _):
             return createCaffeineModularSmallTemplate(forDate: date)
-        
         case (.modularLarge, _):
             return createBothModularLargeTemplate(forDate: date)
-            
+        case (.utilitarianSmall, Complication.ounces.identifier):
+            return createOuncesUtilitarianSmallFlatTemplate(forDate: date)
         case (.utilitarianSmall, Complication.cups.identifier),
-             (.utilitarianSmallFlat, Complication.cups.identifier):
-            return createCupsUtilitarianSmallFlatTemplate(forDate: date)
+                (.utilitarianSmallFlat, Complication.cups.identifier):
+                    return createCupsUtilitarianSmallFlatTemplate(forDate: date)
         case (.utilitarianSmall, _),
-             (.utilitarianSmallFlat, _):
-            return createCaffeineUtilitarianSmallFlatTemplate(forDate: date)
+                (.utilitarianSmallFlat, _):
+                    return createCaffeineUtilitarianSmallFlatTemplate(forDate: date)
         case (.utilitarianLarge, Complication.cups.identifier):
             return createCupsUtilitarianLargeTemplate(forDate: date)
         case (.utilitarianLarge, _):
@@ -181,6 +194,10 @@ class ComplicationController: NSObject, CLKComplicationDataSource {
             return createCaffeineGraphicCornerTemplate(forDate: date)
         case (.graphicCircular, Complication.cups.identifier):
             return createCupsGraphicCircleTemplate(forDate: date)
+        case (.graphicCircular, Complication.ounces.identifier):
+            return createOuncesGraphicCircleTemplate(forDate: date)
+        case (.graphicCorner, Complication.ounces.identifier):
+            return createOuncesGraphicCornerTemplate(forDate: date)
         case (.graphicCircular, _):
             return createCaffeineGraphicCircleTemplate(forDate: date)
         case (.graphicRectangular, Complication.cups.identifier):
@@ -217,6 +234,17 @@ class ComplicationController: NSObject, CLKComplicationDataSource {
         // Create the template using the providers.
         return CLKComplicationTemplateModularSmallStackText(line1TextProvider: numberOfCupsProvider,
                                                             line2TextProvider: cupsUnitProvider)
+    }
+    
+    
+    private func createOuncesModularSmallTemplate(forDate date: Date) -> CLKComplicationTemplate {
+        // Create the data providers.
+        let numberOfOuncesProvider = CLKSimpleTextProvider(text: data.currentOuncesString)
+        let ouncesUnitProvider = CLKSimpleTextProvider(text: "Ounces", shortText: "oz")
+        
+        // Create the template using the providers.
+        return CLKComplicationTemplateModularSmallStackText(line1TextProvider: numberOfOuncesProvider,
+                                                            line2TextProvider: ouncesUnitProvider)
     }
     
     // MARK: - Modular Large Template
@@ -256,6 +284,7 @@ class ComplicationController: NSObject, CLKComplicationDataSource {
                                                            imageProvider: flatUtilitarianImageProvider)
     }
     
+    
     private func createCupsUtilitarianSmallFlatTemplate(forDate date: Date) -> CLKComplicationTemplate {
         // Create the data providers.
         let flatUtilitarianImageProvider = CLKImageProvider(onePieceImage: #imageLiteral(resourceName: "CoffeeSmallFlat"))
@@ -268,6 +297,21 @@ class ComplicationController: NSObject, CLKComplicationDataSource {
         return CLKComplicationTemplateUtilitarianSmallFlat(textProvider: combinedCupsProvider,
                                                            imageProvider: flatUtilitarianImageProvider)
     }
+    
+    
+    private func createOuncesUtilitarianSmallFlatTemplate(forDate date: Date) -> CLKComplicationTemplate {
+        // Create the data providers.
+        let flatUtilitarianImageProvider = CLKImageProvider(onePieceImage: #imageLiteral(resourceName: "CoffeeSmallFlat"))
+        
+        let numberOfOuncesProvider = CLKSimpleTextProvider(text: data.totalCupsTodayString)
+        let ouncesUnitProvider = CLKSimpleTextProvider(text: "Ounces", shortText: "oz")
+        let combinedOuncesProvider = CLKTextProvider(format: "%@ %@", numberOfOuncesProvider, ouncesUnitProvider)
+        
+        // Create the template using the providers.
+        return CLKComplicationTemplateUtilitarianSmallFlat(textProvider: combinedOuncesProvider,
+                                                           imageProvider: flatUtilitarianImageProvider)
+    }
+    
     
     // MARK: - Utilitarian Large Template
     
@@ -297,6 +341,7 @@ class ComplicationController: NSObject, CLKComplicationDataSource {
                                                            imageProvider: flatUtilitarianImageProvider)
     }
     
+    
     // MARK: - Circular Small Template
     
     private func createCaffeineCircularSmallTemplate(forDate date: Date) -> CLKComplicationTemplate {
@@ -319,6 +364,7 @@ class ComplicationController: NSObject, CLKComplicationDataSource {
                                                              line2TextProvider: cupsUnitProvider)
     }
     
+    
     // MARK: - Extra Large Template
     
     private func createCaffeineExtraLargeTemplate(forDate date: Date) -> CLKComplicationTemplate {
@@ -330,6 +376,7 @@ class ComplicationController: NSObject, CLKComplicationDataSource {
         return CLKComplicationTemplateExtraLargeStackText(line1TextProvider: mgCaffeineProvider,
                                                           line2TextProvider: mgUnitProvider)
     }
+    
     
     private func createCupsExtraLargeTemplate(forDate date: Date) -> CLKComplicationTemplate {
         // Create the data providers.
@@ -391,6 +438,50 @@ class ComplicationController: NSObject, CLKComplicationDataSource {
                                                              leadingTextProvider: leadingValueProvider,
                                                              trailingTextProvider: trailingValueProvider,
                                                              outerTextProvider: combinedCupsProvider)
+    }
+    
+    private func createOuncesGraphicCornerTemplate(forDate date: Date) -> CLKComplicationTemplate {
+        // Create the data providers.
+        let leadingValueProvider = CLKSimpleTextProvider(text: "0")
+        leadingValueProvider.tintColor = data.color(forTotalLiquids: 0.0)
+        
+        let trailingValueProvider = CLKSimpleTextProvider(text: "80")
+        trailingValueProvider.tintColor = data.color(forTotalLiquids: 80.0)
+        
+        let numberOfOuncesProvider = CLKSimpleTextProvider(text: data.currentOuncesString)
+        let ouncesUnitProvider = CLKSimpleTextProvider(text: "Ounces", shortText: "oz")
+        let combinedOuncesProvider = CLKTextProvider(format: "%@ %@", numberOfOuncesProvider, ouncesUnitProvider)
+        
+        let percentage = Float(min(data.currentOz / 80.0, 1.0))
+        let gaugeProvider = CLKSimpleGaugeProvider(style: .fill,
+                                                   gaugeColors: [.red, .yellow, .green],
+                                                   gaugeColorLocations: [0.0, 20.0 / 2.0, 50.0 / 80.0] as [NSNumber],
+                                                   fillFraction: percentage)
+        
+        // Create the template using the providers.
+        return CLKComplicationTemplateGraphicCornerGaugeText(gaugeProvider: gaugeProvider,
+                                                             leadingTextProvider: leadingValueProvider,
+                                                             trailingTextProvider: trailingValueProvider,
+                                                             outerTextProvider: combinedOuncesProvider)
+    }
+    // MARK: - Graphic Circle Template
+    
+    private func createOuncesGraphicCircleTemplate(forDate date: Date) -> CLKComplicationTemplate {
+        // Create the data providers.
+        let percentage = Float(min(data.currentOz / 80.0, 1.0))
+        let gaugeProvider = CLKSimpleGaugeProvider(style: .fill,
+                                                   gaugeColors: [.red, .yellow, .green],
+                                                   gaugeColorLocations: [0.0, 300.0 / 500.0, 450.0 / 500.0] as [NSNumber],
+                                                   fillFraction: percentage)
+        
+        let ouncesProvider = CLKSimpleTextProvider(text: data.currentOuncesString)
+        let mgUnitProvider = CLKSimpleTextProvider(text: "oz Ounces", shortText: "oz")
+        mgUnitProvider.tintColor = data.color(forCaffeineDose: data.mgCaffeine(atDate: date))
+        
+        // Create the template using the providers.
+        return CLKComplicationTemplateGraphicCircularOpenGaugeSimpleText(gaugeProvider: gaugeProvider,
+                                                                         bottomTextProvider: mgUnitProvider,
+                                                                         centerTextProvider: ouncesProvider)
     }
     
     // MARK: - Graphic Circle Template
