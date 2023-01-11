@@ -15,6 +15,7 @@ import os
 // data.
 class CoffeeData: ObservableObject {
     
+    
     private enum HealthkitSetupError: Error {
         case notAvailableOnDevice
         case dataTypeNotAvailable
@@ -229,7 +230,12 @@ class CoffeeData: ObservableObject {
         
         if UserDefaults.standard.object(forKey: "dietaryCaffeine") != nil {
             let data = UserDefaults.standard.object(forKey: "dietaryCaffeine") as! Data
+            // working
             anchor = NSKeyedUnarchiver.unarchiveObject(with: data) as! HKQueryAnchor
+            
+            // Moving From Depreciated
+            // anchor = NSKeyedUnarchiver.unarchivedObject(ofClass : HKQueryAnchor.class, from: data) as! HKQueryAnchor
+            
         }
         
         
@@ -622,12 +628,14 @@ class CoffeeData: ObservableObject {
         if #available(watchOS 8.0, *) {
         // The quantity type to write to the health store.
         let writeDataTypes : Set = [HKObjectType.quantityType(forIdentifier:
-                                    HKQuantityTypeIdentifier.dietaryCaffeine)!, HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryWater)!, HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.numberOfAlcoholicBeverages)!
+                                    HKQuantityTypeIdentifier.dietaryCaffeine)!, HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryWater)!,
+                                    HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.numberOfAlcoholicBeverages)!
                                     ]
             
         // The quantity types to read from the health store.
         let readDataTypes : Set = [HKObjectType.quantityType(forIdentifier:
-                                    HKQuantityTypeIdentifier.stepCount)!, HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryCaffeine)!, HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.numberOfAlcoholicBeverages)!,
+                                    HKQuantityTypeIdentifier.stepCount)!, HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryCaffeine)!,
+                                    HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.numberOfAlcoholicBeverages)!,
                                     HKObjectType.characteristicType(forIdentifier: HKCharacteristicTypeIdentifier.biologicalSex)!, HKObjectType.characteristicType(forIdentifier: HKCharacteristicTypeIdentifier.dateOfBirth)!,
                                     HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.bodyMass)!, HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryWater)!, HKObjectType.activitySummaryType()
                                     ]
