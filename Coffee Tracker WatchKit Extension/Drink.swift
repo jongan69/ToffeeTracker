@@ -13,18 +13,22 @@ struct Drink: Hashable, Codable {
     // The mgCaffeine property contains the amount of caffeine in the drink.
     let mgCaffeine: Double
     
+    // The HKIdentifier property contains the HKIdentifier of the drink.
+    let HKIdentifier: String
+    
+    // The oz property contains contains the amount of fluid ounces in the drink.
+    let oz: Double
+    
     // The date property contains the time and date when the user consumed the drink.
     let date: Date
     
     // The uuid property contains a globally unique identifier for the drink.
     let uuid: UUID
     
-    // The uuid property contains a globally unique identifier for the drink.
-    let oz: Double
-    
     // The initializer creates a new drink object.
-    init(mgCaffeine: Double, oz: Double ,onDate date: Date, uuid: UUID = UUID()) {
+    init(mgCaffeine: Double, HKIdentifier: String, oz: Double ,onDate date: Date, uuid: UUID = UUID()) {
         self.mgCaffeine = mgCaffeine
+        self.HKIdentifier = HKIdentifier
         self.oz = oz
         self.date = date
         self.uuid = uuid

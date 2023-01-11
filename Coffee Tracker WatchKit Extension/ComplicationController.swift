@@ -18,7 +18,7 @@ class ComplicationController: NSObject, CLKComplicationDataSource {
         static let caffeine = Complication(identifier: "Coffee_Tracker_Caffeine_Dose", displayName: "Caffeine Dose")
         static let cups = Complication(identifier: "Coffee_Tracker_Number_Of_Cups", displayName: "Total Cups")
         static let both = Complication(identifier: "Coffee_Tracker_Both", displayName: "Both Caffeine and Cups")
-        static let ounces = Complication(identifier: "Ounces", displayName: "Ounces")
+        static let ounces = Complication(identifier: "Ounces", displayName: "Ounces Drank Today")
 
     }
     
@@ -303,7 +303,7 @@ class ComplicationController: NSObject, CLKComplicationDataSource {
         // Create the data providers.
         let flatUtilitarianImageProvider = CLKImageProvider(onePieceImage: #imageLiteral(resourceName: "CoffeeSmallFlat"))
         
-        let numberOfOuncesProvider = CLKSimpleTextProvider(text: data.totalCupsTodayString)
+        let numberOfOuncesProvider = CLKSimpleTextProvider(text: data.currentOuncesString)
         let ouncesUnitProvider = CLKSimpleTextProvider(text: "Ounces", shortText: "oz")
         let combinedOuncesProvider = CLKTextProvider(format: "%@ %@", numberOfOuncesProvider, ouncesUnitProvider)
         
@@ -475,12 +475,12 @@ class ComplicationController: NSObject, CLKComplicationDataSource {
                                                    fillFraction: percentage)
         
         let ouncesProvider = CLKSimpleTextProvider(text: data.currentOuncesString)
-        let mgUnitProvider = CLKSimpleTextProvider(text: "oz Ounces", shortText: "oz")
-        mgUnitProvider.tintColor = data.color(forCaffeineDose: data.mgCaffeine(atDate: date))
+        let ozUnitProvider = CLKSimpleTextProvider(text: "oz Ounces", shortText: "oz")
+        ozUnitProvider.tintColor = data.color(forTotalLiquids: data.ozConsumedToday(atDate: date))
         
         // Create the template using the providers.
         return CLKComplicationTemplateGraphicCircularOpenGaugeSimpleText(gaugeProvider: gaugeProvider,
-                                                                         bottomTextProvider: mgUnitProvider,
+                                                                         bottomTextProvider: ozUnitProvider,
                                                                          centerTextProvider: ouncesProvider)
     }
     

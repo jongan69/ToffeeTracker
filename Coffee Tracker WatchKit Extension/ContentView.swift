@@ -11,7 +11,7 @@ import os
 // The ContentView wrapper simplifies adding the main view to the hosting controller.
 struct ContentView: View {
     
-    let logger = Logger(subsystem: "com.example.apple-samplecode.Coffee-Tracker.watchkitapp.watchkitextension.ContengView", category: "Root View")
+    let logger = Logger(subsystem: "com.ToffeeCoffee.watchkitapp.watchkitextension.ContentView", category: "Root View")
         
     // Access the shared model object.
     let data = CoffeeData.shared

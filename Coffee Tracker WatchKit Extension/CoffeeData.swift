@@ -21,12 +21,18 @@ class CoffeeData: ObservableObject {
     }
     
     
-    let logger = Logger(subsystem: "com.example.apple-samplecode.Coffee-Tracker.watchkitapp.watchkitextension.CoffeeData", category: "Model")
+    let logger = Logger(subsystem: "com.ToffeeTracker.watchkitapp.watchkitextension.CoffeeData", category: "Model")
     let healthStore = HKHealthStore()
 
     // The data model needs to be accessed both from the app extension and from
     // the complication controller.
     static let shared = CoffeeData()
+    
+    
+    
+    //
+    //    *** Helper Functions ***
+    //
     
     // The number formatter limits numbers to three significant digits.
     lazy var numberFormatter: NumberFormatter = {
@@ -36,10 +42,6 @@ class CoffeeData: ObservableObject {
         formatter.minimumSignificantDigits = 1
         return formatter
     }()
-    
-    
-    
-    
     
     // The model uses the background queue to asynchronously save and load data.
     private var background = DispatchQueue(label: "Background Queue",
@@ -63,13 +65,17 @@ class CoffeeData: ObservableObject {
         }
     }
     
-    
-    
-    
-    
     // Use this value to determine whether you have changes that can be saved to disk.
     private var savedValue = [Drink]()
     
+    //
+    //    *** Identifier Functions ***
+    //
+    
+    
+    //
+    //    *** Caffeine Functions ***
+    //
     // The currentMGCaffeine property contains the current level of caffeine in milligrams.
     // This property is calculated based on the currentDrinks array.
     public var currentMGCaffeine: Double {
@@ -87,10 +93,6 @@ class CoffeeData: ObservableObject {
         return result
     }
 
-    
-    
-    
-    
     // Calculate the amount of caffeine in the user's system at the specified date.
     // The amount of caffeine is calculated from the currentDrinks array.
     public func mgCaffeine(atDate date: Date) -> Double {
@@ -104,8 +106,40 @@ class CoffeeData: ObservableObject {
         return total
     }
     
+    // Return a user-readable string that describes the amount of caffeine in the user's
+    // system at the specified date.
+    public func mgCaffeineString(atDate date: Date) -> String {
+        guard let result = numberFormatter.string(from: NSNumber(value: mgCaffeine(atDate: date))) else {
+            fatalError("*** Unable to create a string for \(currentMGCaffeine) ***")
+        }
+        
+        return result
+    }
+    
+    // Return the total number of drinks consumed today. The value is in the equivalent
+    // number of 8-ounce cups of coffee.
+    public var totalCupsToday: Double {
+        
+        // Calculate midnight this morning.
+        let calendar = Calendar.current
+        let midnight = calendar.startOfDay(for: Date())
+        
+        // Filter the drinks.
+        let drinks = currentDrinks.filter { midnight.compare($0.date) == .orderedAscending }
+        
+        // Get the total caffeine dose.
+        let totalMG = drinks.reduce(0.0) { $0 + $1.mgCaffeine }
+        
+        // Convert mg caffeine to equivalent cups.
+        return totalMG / DrinkType.smallCoffee.mgCaffeinePerServing
+    }
     
     
+    
+
+    //
+    //    *** Ounces Functions ***
+    //
     public var currentOz: Double {
         ozConsumedToday(atDate: Date())
     }
@@ -134,40 +168,9 @@ class CoffeeData: ObservableObject {
     
     
     
-    
-    // Return a user-readable string that describes the amount of caffeine in the user's
-    // system at the specified date.
-    public func mgCaffeineString(atDate date: Date) -> String {
-        guard let result = numberFormatter.string(from: NSNumber(value: mgCaffeine(atDate: date))) else {
-            fatalError("*** Unable to create a string for \(currentMGCaffeine) ***")
-        }
-        
-        return result
-    }
-    
-    
-    
-    
-    // Return the total number of drinks consumed today. The value is in the equivalent
-    // number of 8-ounce cups of coffee.
-    public var totalCupsToday: Double {
-        
-        // Calculate midnight this morning.
-        let calendar = Calendar.current
-        let midnight = calendar.startOfDay(for: Date())
-        
-        // Filter the drinks.
-        let drinks = currentDrinks.filter { midnight.compare($0.date) == .orderedAscending }
-        
-        // Get the total caffeine dose.
-        let totalMG = drinks.reduce(0.0) { $0 + $1.mgCaffeine }
-        
-        // Convert mg caffeine to equivalent cups.
-        return totalMG / DrinkType.smallCoffee.mgCaffeinePerServing
-    }
-    
-    
-    
+    //
+    //    *** Complication Functions ***
+    //
     // Return the total equivalent cups of coffee as a user-readable string.
     public var totalCupsTodayString: String {
         guard let result = numberFormatter.string(from: NSNumber(value: totalCupsToday )) else {
@@ -211,46 +214,16 @@ class CoffeeData: ObservableObject {
     
     
     
-    // Add a drink to the list of drinks.
-    public func addDrink(mgCaffeine: Double, onDate date: Date, oz: Double) {
-        logger.debug("Adding a drink.")
-        
-        // Create a local array to hold the changes.
-        var drinks = currentDrinks
-        
-        // Create a new drink and add it to the array.
-        let drink = Drink(mgCaffeine: mgCaffeine, oz: oz, onDate: date)
-        
-        drinks.append(drink)
-        
-        // Filter the array to get rid of any drinks that are 24 hours old.
-        drinks = filterDrinks(drinks: drinks)
-        
-        // Update the current drinks property.
-        currentDrinks = drinks
-    }
     
-    
-    
-    
-    // MARK: - Private Methods
-    
-    // Don't call the model's initializer. Use the shared instance instead.
-    private init() {
-        
-        // Begin loading the data from disk.
-        load()
-    }
-    
-    
-    
-    
-    
-    func getCaffeineFromHealthKit (){
-        print("Getting Caffeine From HealthKit")
+    //
+    //    *** HealthKit Functions ***
+    //
+    func getHealthKitData (){
+        print("Getting Data From HealthKit")
         guard let dietaryCaffeineType = HKObjectType.quantityType(forIdentifier: .dietaryCaffeine) else {
             fatalError("*** Unable to get the caffeine type ***")
         }
+        
         
         var anchor = HKQueryAnchor.init(fromValue: 0)
         
@@ -259,6 +232,7 @@ class CoffeeData: ObservableObject {
             anchor = NSKeyedUnarchiver.unarchiveObject(with: data) as! HKQueryAnchor
         }
         
+        
         let query = HKAnchoredObjectQuery(type: dietaryCaffeineType,
                                           predicate: nil,
                                           anchor: anchor,
@@ -266,6 +240,7 @@ class CoffeeData: ObservableObject {
             guard let samples = samplesOrNil, let deletedObjects = deletedObjectsOrNil else {
                 fatalError("*** An error occurred during the initial query: \(errorOrNil!.localizedDescription) ***")
                     }
+            
                                             anchor = newAnchor!
             
                                             let data : Data = try! NSKeyedArchiver.archivedData(withRootObject: newAnchor as Any, requiringSecureCoding: true)
@@ -279,15 +254,16 @@ class CoffeeData: ObservableObject {
                                                 print("deleted: \(deletedDietaryCaffeine)")
                                             }
                                             
-                                            print("Caffeine QUERY RESULTS")
-                                            print("Caffeine Anchor for Anchored Healthkit Query: \(anchor)")
-                                            print("Caffeine Data: \(data)")
-                                            print("Caffeine samples: \(samples)")
+                                            print("HealthKit QUERY RESULTS")
+                                            print("HealthKit Anchor for Anchored Healthkit Query: \(anchor)")
+                                            print("HealthKit Data: \(data)")
+                                            print("HealthKit samples: \(samples)")
                                             
                                             print("Caffeine on watch Today")
                                             print(self.currentMGCaffeine);
                                             
         }
+        
         query.updateHandler = { (query, samplesOrNil, deletedObjectsOrNil, newAnchor, errorOrNil) in
 
             guard let samples = samplesOrNil, let deletedObjects = deletedObjectsOrNil else {
@@ -306,16 +282,12 @@ class CoffeeData: ObservableObject {
                 print("deleted: \(deletedDietaryCaffeineSample)")
             }
             
-            print("Get Caffeine Query updateHandler")
+            print("Get HealthKit Query updateHandler")
             print(data);
             print(samples);
         }
         self.healthStore.execute(query)
     }
-    
-    
-    
-    
     
     
     func saveCaffeineInHealthKit (){
@@ -370,7 +342,6 @@ class CoffeeData: ObservableObject {
     }
     
     
-    
     func saveWaterInHealthKit (){
         print("Saving Water To HealthKit")
         // The quantity type to write to the health store.
@@ -392,15 +363,12 @@ class CoffeeData: ObservableObject {
         if HKHealthStore.isHealthDataAvailable() {
             if let type = HKSampleType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryWater) {
                 let date = Date()
-                
                 let waterInOunces = Double(8.0)
                 let lastDrink = currentDrinks.last!
-                
                 print("Save Water DATA")
                 print("Last Drink was \(lastDrink)")
                 print("\(waterInOunces) oz of Water")
                 print("Saving \(waterInOunces) oz to HealthKit")
-                
                 let quantity = HKQuantity(unit: HKUnit.fluidOunceImperial(), doubleValue: waterInOunces)
                 let sample = HKQuantitySample(type: type, quantity: quantity, start: date, end: date)
                 self.healthStore.save(sample, withCompletion: { (success, error) in
@@ -436,7 +404,7 @@ class CoffeeData: ObservableObject {
                         let date = Date()
                         let lastDrink = currentDrinks.last!
                         
-                        print("Save Alcohol Datat")
+                        print("Save Alcohol Data")
                         print("Last Drink was \(lastDrink)")
                         print("Saving 1 drink to HealthKit")
                         
@@ -452,7 +420,7 @@ class CoffeeData: ObservableObject {
             }
         } else {
             // Fallback on earlier versions
-            print("Error Need iOS 8 Health Kit")
+            print("Error: Need iOS 8 Health Kit")
 
         }
     }
@@ -460,15 +428,65 @@ class CoffeeData: ObservableObject {
     
     
     
+    //
+    //    *** Drink Functions ***
+    //
+    
+    
+    // Filter array to only the drinks in the last 24 hours.
+    func filterDrinks(drinks: [Drink]) -> [Drink] {
+        // The endDate property contains the current date and time.
+        let endDate = Date()
+        
+        // The startDate property contains the date and time 24 hours ago.
+        let startDate = endDate.addingTimeInterval(-24.0 * 60.0 * 60.0)
+        
+        // Return an array of drinks with a date parameter between
+        // the start and end dates.
+        return drinks.filter { (drink) -> Bool in
+            (startDate.compare(drink.date) != .orderedDescending) &&
+                (endDate.compare(drink.date) != .orderedAscending)
+        }
+    }
+
+    // Add a drink to the list of drinks.
+    public func addDrink(mgCaffeine: Double, HKIdentifier: String, oz: Double, onDate date: Date) {
+        logger.debug("Adding a drink.")
+        
+        // Create a local array to hold the changes.
+        var drinks = currentDrinks
+        
+        // Create a new drink and add it to the array.
+        let drink = Drink(mgCaffeine: mgCaffeine,
+                          HKIdentifier: HKIdentifier,
+                          oz: oz,
+                          onDate: date)
+        
+        drinks.append(drink)
+        
+        // Filter the array to get rid of any drinks that are 24 hours old.
+        drinks = filterDrinks(drinks: drinks)
+        
+        // Update the current drinks property.
+        currentDrinks = drinks
+    }
+    
+    
+    // MARK: - Private Methods
+    
+    // Don't call the model's initializer. Use the shared instance instead.
+    private init() {
+        // Begin loading the data from disk.
+        load()
+    }
+
     // Begin saving the drink data to disk.
     private func save() {
-        
-        
         // Check for Healthkit Auth
         guard HKHealthStore.isHealthDataAvailable() else {
             if #available(watchOS 8.0, *) {
                 // Request Authorization if not availible
-                print("Requesting Health Kit Access W/ Alc")
+                print("Requesting Health Kit Access iOS 8+")
                 // The quantity type to write to the health store.
                 let writeDataTypes : Set = [
                     HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryCaffeine)!,
@@ -487,11 +505,11 @@ class CoffeeData: ObservableObject {
                 self.healthStore.requestAuthorization(toShare: writeDataTypes, read: readDataTypes) { (success, error) in
                     if !success {
                         // Handle the error here.
-                        print("Couldn't read")
+                        print("Couldn't read from HealthKit on Save")
                     } else {
                         // Once Authorized, query dietaryCaffeine
                         print("Access to Data Granted")
-                        self.getCaffeineFromHealthKit()
+                        self.getHealthKitData()
                     }
                 }
                 return
@@ -513,16 +531,17 @@ class CoffeeData: ObservableObject {
                 self.healthStore.requestAuthorization(toShare: writeDataTypes, read: readDataTypes) { (success, error) in
                     if !success {
                         // Handle the error here.
-                        print("Couldn't read")
+                        print("Couldn't read from HealthKit on Save")
                     } else {
                         // Once Authorized, query dietaryCaffeine
                         print("Access to Data Granted")
-                        self.getCaffeineFromHealthKit()
+                        self.getHealthKitData()
                     }
                 }
                 return
             }
         }
+        
         
         // Check if drinks are outdated
         if currentDrinks == savedValue {
@@ -531,19 +550,27 @@ class CoffeeData: ObservableObject {
         } else {
             // Check Drink type by Caffeine amount
             let latest = Double(currentDrinks.last!.mgCaffeine)
+            let latestType = currentDrinks.last!.HKIdentifier
+            logger.debug("The drink list changed. Saving Based on \(latestType)")
+
+            switch latestType {
             
-            switch latest {
-            case -1:
+            case "numberOfAlcoholicBeverages":
+                // Saving Alcohol
                 print("Save Alcohol to HealthKit")
                 saveAlcoholInHealthKit ()
                 // Update the saved value.
                 self.savedValue = currentDrinks
-            case 0:
+            
+            case "dietaryWater":
+                // Saving Water
                 print("Save Water to HealthKit")
                 saveWaterInHealthKit()
                 // Update the saved value.
                 self.savedValue = currentDrinks
+           
             default:
+                                
                 // Saving Caffeine
                 print("Save Caffeine to HealthKit")
                 saveCaffeineInHealthKit()
@@ -582,95 +609,76 @@ class CoffeeData: ObservableObject {
                         saveAction()
                     }
                 }
+                
+                
             }
-            
-            // Check if Alcohol by -1
-//            if(latest == -1.0){
-//                // Saving Water
-//                print("Save Water to HealthKit")
-//                saveWaterInHealthKit()
-//            } else if(latest == 0){
-//                // Saving Water
-//                print("Save Water to HealthKit")
-//                saveWaterInHealthKit()
-//            } else {
-//                // Saving Caffeine
-//                print("Save Caffeine to HealthKit")
-//                saveCaffeineInHealthKit()
-//            }
-            
-            
         }
     }
+    
     
     
     // Begin loading the data from disk.
     private func load() {
         // Read the data from a background queue.
         background.async { [unowned self] in
-        logger.debug("Loading the model.")
-        
+        logger.debug("Requesting HealthKit on Load")
+        if #available(watchOS 8.0, *) {
         // The quantity type to write to the health store.
-            if #available(watchOS 8.0, *) {
-                let writeDataTypes : Set = [HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryCaffeine)!,
-                                            HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryWater)!,
-                                            HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.numberOfAlcoholicBeverages)!]
-                
-                // The quantity types to read from the health store.
-                let readDataTypes : Set = [HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.stepCount)!,
-                                                           HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryCaffeine)!,
-                                                           HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.numberOfAlcoholicBeverages)!,
-                                                           HKObjectType.characteristicType(forIdentifier: HKCharacteristicTypeIdentifier.biologicalSex)!,
-                                                           HKObjectType.characteristicType(forIdentifier: HKCharacteristicTypeIdentifier.dateOfBirth)!,
-                                                           HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.bodyMass)!,
-                                                           HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryWater)!,
-                                                           HKObjectType.activitySummaryType()]
-                
-                // Request authorization for those quantity types.
-                self.healthStore.requestAuthorization(toShare: writeDataTypes, read: readDataTypes) { (success, error) in
-                        if !success {
-                            // Handle the error here.
-                            print("Couldn't read")
-                        } else {
-                            // Once Authorized, query dietaryCaffeine
-                            print("Access to Data Granted")
-                            self.getCaffeineFromHealthKit()
-                        }
+        let writeDataTypes : Set = [HKObjectType.quantityType(forIdentifier:
+                                    HKQuantityTypeIdentifier.dietaryCaffeine)!, HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryWater)!, HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.numberOfAlcoholicBeverages)!
+                                    ]
+            
+        // The quantity types to read from the health store.
+        let readDataTypes : Set = [HKObjectType.quantityType(forIdentifier:
+                                    HKQuantityTypeIdentifier.stepCount)!, HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryCaffeine)!, HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.numberOfAlcoholicBeverages)!,
+                                    HKObjectType.characteristicType(forIdentifier: HKCharacteristicTypeIdentifier.biologicalSex)!, HKObjectType.characteristicType(forIdentifier: HKCharacteristicTypeIdentifier.dateOfBirth)!,
+                                    HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.bodyMass)!, HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryWater)!, HKObjectType.activitySummaryType()
+                                    ]
+
+            // Request authorization for those quantity types.
+            self.healthStore.requestAuthorization(toShare: writeDataTypes, read: readDataTypes) { (success, error) in
+                    if !success {
+                        // Handle the error here.
+                        print("Couldn't read on Load iOS 8+")
+                    } else {
+                        // Once Authorized, query dietaryCaffeine
+                        print("Access to Data Granted on Load iOS 8+")
+                        self.getHealthKitData()
                     }
+                }
             } else {
                 // Fallback on earlier versions
+                
                 // The quantity type to write to the health store.
                 let writeDataTypes : Set = [HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryCaffeine)!, HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryWater)!]
+                
                 // The quantity types to read from the health store.
-                let readDataTypes : Set = [HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.stepCount)!,
-                                                           HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryCaffeine)!,
-                                                           HKObjectType.characteristicType(forIdentifier: HKCharacteristicTypeIdentifier.biologicalSex)!,
-                                                           HKObjectType.characteristicType(forIdentifier: HKCharacteristicTypeIdentifier.dateOfBirth)!,
-                                                           HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.bodyMass)!,
-                                                           HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryWater)!,
-                                                           HKObjectType.activitySummaryType()]
+                let readDataTypes : Set = [HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.stepCount)!, HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryCaffeine)!, HKObjectType.characteristicType(forIdentifier: HKCharacteristicTypeIdentifier.biologicalSex)!, HKObjectType.characteristicType(forIdentifier: HKCharacteristicTypeIdentifier.dateOfBirth)!,
+                    HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.bodyMass)!, HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryWater)!, HKObjectType.activitySummaryType()
+                ]
+                
                 // Request authorization for those quantity types.
                 self.healthStore.requestAuthorization(toShare: writeDataTypes, read: readDataTypes) { (success, error) in
-                        if !success {
-                            // Handle the error here.
-                            print("Couldn't read")
-                        } else {
-                            // Once Authorized, query dietaryCaffeine
-                            print("Access to Data Granted")
-                            self.getCaffeineFromHealthKit()
-                        }
+                    if !success {
+                        // Handle the error here.
+                        print("Couldn't read < iOS 8")
+                    } else {
+                        // Once Authorized, query dietaryCaffeine
+                        print("Access to Data Granted < iOS 8")
+                        self.getHealthKitData()
                     }
+                }
             }
         
             
         // Check if Authorization Success on Load
         guard HKHealthStore.isHealthDataAvailable() else {
-            // Request Auth Error
-            self.logger.debug("Error Requesting HealthKit Auth")
+                // Request Auth Error
+                self.logger.debug("Load Error Requesting HealthKit Auth")
             return
-            }
+        }
         
-            
+        
             var drinks: [Drink]
             
             do {
@@ -703,30 +711,10 @@ class CoffeeData: ObservableObject {
     
     // Returns the URL for the plist file that stores the drink data.
     private func getDataURL() throws -> URL {
-        // Get the URL for the app's document directory.
-        let fileManager = FileManager.default
-        let documentDirectory = try fileManager.url(for: .documentDirectory,
-                                                    in: .userDomainMask,
-                                                    appropriateFor: nil,
-                                                    create: false)
-        
+            // Get the URL for the app's document directory.
+            let fileManager = FileManager.default
+            let documentDirectory = try fileManager.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
         // Append the file name to the directory.
         return documentDirectory.appendingPathComponent("CoffeeTracker.plist")
-    }
-}
-
-// Filter array to only the drinks in the last 24 hours.
-private func filterDrinks(drinks: [Drink]) -> [Drink] {
-    // The endDate property contains the current date and time.
-    let endDate = Date()
-    
-    // The startDate property contains the date and time 24 hours ago.
-    let startDate = endDate.addingTimeInterval(-24.0 * 60.0 * 60.0)
-    
-    // Return an array of drinks with a date parameter between
-    // the start and end dates.
-    return drinks.filter { (drink) -> Bool in
-        (startDate.compare(drink.date) != .orderedDescending) &&
-            (endDate.compare(drink.date) != .orderedAscending)
     }
 }

@@ -11,7 +11,6 @@ import Foundation
 
 // For Extended Drink Functioanlity use Negaitive Caffeine Numbers
 enum DrinkType: Int, CaseIterable, Identifiable {
-    
     case smallCoffee
     case mediumCoffee
     case largeCoffee
@@ -29,6 +28,38 @@ enum DrinkType: Int, CaseIterable, Identifiable {
     // the id property contains a unique ID for each type of drink.
     var id: Int {
         self.rawValue
+    }
+    
+    // the HKIdentifier property contains the drink's classifier as a user-defined string.
+    var HKIdentifier: String {
+        switch self {
+        case .smallCoffee:
+            return "dietaryCaffeine"
+        case .mediumCoffee:
+            return "dietaryCaffeine"
+        case .largeCoffee:
+            return "dietaryCaffeine"
+        case .singleEspresso:
+            return "dietaryCaffeine"
+        case .doubleEspresso:
+            return "dietaryCaffeine"
+        case .quadEspresso:
+            return "dietaryCaffeine"
+        case .blackTea:
+            return "dietaryCaffeine"
+        case .greenTea:
+            return "dietaryCaffeine"
+        case .softDrink:
+            return "dietaryCaffeine"
+        case .energyDrink:
+            return "dietaryCaffeine"
+        case .chocolate:
+            return "dietaryCaffeine"
+        case .waterCup:
+            return "dietaryWater"
+        case .shotOfLiquor:
+            return "numberOfAlcoholicBeverages"
+        }
     }
     
     // the name property contains the drink's name as a user-defined string.
@@ -91,7 +122,7 @@ enum DrinkType: Int, CaseIterable, Identifiable {
         case .waterCup:
             return 0.0
         case .shotOfLiquor:
-            return -1.0
+            return 0.0
         }
     }
     
