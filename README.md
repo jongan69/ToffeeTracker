@@ -1,4 +1,6 @@
-# Toffee
+# ToffeeTracker
+
+[App Store](https://apps.apple.com/us/app/toffeetracker/id1663949034)
 
 A iOS Watch App for Tracking Caffeine Consumption with multiple complications for a single complication family using descriptors and HealthKit Integration
 
