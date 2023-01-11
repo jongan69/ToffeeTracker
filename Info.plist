@@ -6,5 +6,9 @@
 	<string>ToffeeTracker saves caffeine and water consumed with information about drinks to HealthKit.</string>
 	<key>NSHealthShareUsageDescription</key>
 	<string>ToffeeTracker saves caffeine and water consumed with information about drinks to HealthKit.</string>
+	<key>CFBundleVersion</key>
+	<string>2.0</string>
+	<key>CFBundleShortVersionString</key>
+	<string>2.0</string>
 </dict>
 </plist>

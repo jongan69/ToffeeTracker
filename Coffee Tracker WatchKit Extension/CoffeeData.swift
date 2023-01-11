@@ -239,7 +239,7 @@ class CoffeeData: ObservableObject {
                                           limit: HKObjectQueryNoLimit) { (query, samplesOrNil, deletedObjectsOrNil, newAnchor, errorOrNil) in
             guard let samples = samplesOrNil, let deletedObjects = deletedObjectsOrNil else {
                 fatalError("*** An error occurred during the initial query: \(errorOrNil!.localizedDescription) ***")
-                    }
+                }
             
                                             anchor = newAnchor!
             
@@ -315,13 +315,11 @@ class CoffeeData: ObservableObject {
         if HKHealthStore.isHealthDataAvailable() {
             if let type = HKSampleType.quantityType(forIdentifier: HKQuantityTypeIdentifier.dietaryCaffeine) {
                 let date = Date()
-                print("-3 Exponent")
-                
                 
                 let latest = Double(currentDrinks.last!.mgCaffeine)
                 let mgToGrams = Double(truncating: (pow(10,-3) * latest) as NSNumber)
                 
-                print("Save DATA")
+                print("Save Caffeine Data")
                 print("\(latest) mg of Caffeine is \(mgToGrams) grams")
                 print("Saving \(mgToGrams) grams to HealthKit")
                 
@@ -549,7 +547,6 @@ class CoffeeData: ObservableObject {
             return
         } else {
             // Check Drink type by Caffeine amount
-            let latest = Double(currentDrinks.last!.mgCaffeine)
             let latestType = currentDrinks.last!.HKIdentifier
             logger.debug("The drink list changed. Saving Based on \(latestType)")
 
